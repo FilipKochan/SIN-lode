@@ -1,0 +1,6 @@
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\bin\Debug\lode.exe.config
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\bin\Debug\lode.exe
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\bin\Debug\lode.pdb
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\obj\Debug\lode.csprojAssemblyReference.cache
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\obj\Debug\lode.exe
+C:\Users\filda\Documents\GitHub\SIN-lode\lode\obj\Debug\lode.pdb
