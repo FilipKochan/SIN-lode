@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
-namespace ConsoleApp2
+namespace _lode
 {
     class Program
     {
@@ -18,6 +18,7 @@ namespace ConsoleApp2
             pole = new int[sirka, delka];
             bool tvorbaLodi = true;
             bool pohybLodi = true;
+            Console.Clear();
 
             while (tvorbaLodi)
             {
@@ -26,11 +27,13 @@ namespace ConsoleApp2
                 Console.Clear();
             }
 
+            lode.Add(new int[,] { { 1, 1, 0 }, { 0, 1, 1 }, { 0, 0, 1 } });
             NacteniLodi(lode, lodeVPoli, souradniceLodiVPoli);
 
             while (pohybLodi)
             {
                 Console.WriteLine("x: {0}; y: {1}", souradniceLodiVPoli[aktualniLod][0], souradniceLodiVPoli[aktualniLod][1]);
+                Console.WriteLine("sirka lode: {0}; delka lode: {1}", lodeVPoli[aktualniLod].GetLength(0), lodeVPoli[aktualniLod].GetLength(1));
                 PohybLodi(lode, lodeVPoli, pole, ref pohybLodi, souradniceLodiVPoli, ref aktualniLod);
                 Console.Clear();
             }
@@ -43,7 +46,7 @@ namespace ConsoleApp2
             Console.WriteLine("Zadejte index lodi, kterou chcete nacist:");
             int.TryParse(Console.ReadLine(), out int indexLodi);
             lodeVPoli.Add(lode[indexLodi - 1]);
-            souradniceLodiVPoli.Add(new int[] { 0, 1 });
+            souradniceLodiVPoli.Add(new int[] { 0, 0 });
             Console.Clear();
         }
 
@@ -78,7 +81,7 @@ namespace ConsoleApp2
             Console.WriteLine(" " + new String('-', 4 * pole.GetLength(0) + 1));
         }
 
-        private static void VykresleniPole (int[,] pole, int[] pozicelodi, int[,] lod)
+        private static void VykresleniPole(int[,] pole, int[] pozicelodi, int[,] lod)
         {
             for (int i = 0; i < pole.GetLength(1); i++)
             {
@@ -88,15 +91,14 @@ namespace ConsoleApp2
                 {
                     if (pole[j, i] == 0)
                         Console.Write("   |");
-                    else
+                    else if (pole[j, i] == 1)
                     {
-                        if (j >= pozicelodi[0] && j <= pozicelodi[0] + lod.GetLength(0))
-                        {
-                            if (i >= pozicelodi[1] && i <= pozicelodi[1] + lod.GetLength(1))
-                            {
-                                Console.ForegroundColor = ConsoleColor.Green;
-                            }
-                        }
+                        Console.Write(" █ ");
+                        Console.Write("|");
+                    }
+                    else if (pole[j, i] == 2)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
                         Console.Write(" █ ");
                         Console.ResetColor();
                         Console.Write("|");
@@ -294,16 +296,19 @@ namespace ConsoleApp2
             Console.WriteLine($"poc0: {pocatecniIndex0}, kon0: {koncovyIndex0}\npoc1: {pocatecniIndex1}, kon1: {koncovyIndex1}");
 
             //vytvoreni noveho arraye lodi
-            int[,] poleLodi = new int[koncovyIndex0 - pocatecniIndex0 + 1, koncovyIndex1 - pocatecniIndex1 + 1];
-            for (int j = pocatecniIndex0; j <= koncovyIndex0; j++)
+            if (pocatecniIndex0 != -1)
             {
-                for (int k = pocatecniIndex1; k <= koncovyIndex1; k++)
+                int[,] poleLodi = new int[koncovyIndex0 - pocatecniIndex0 + 1, koncovyIndex1 - pocatecniIndex1 + 1];
+                for (int j = pocatecniIndex0; j <= koncovyIndex0; j++)
                 {
-                    poleLodi[j - pocatecniIndex0, k - pocatecniIndex1] = pole[j, k];
+                    for (int k = pocatecniIndex1; k <= koncovyIndex1; k++)
+                    {
+                        poleLodi[j - pocatecniIndex0, k - pocatecniIndex1] = pole[j, k];
+                    }
                 }
-            }
 
-            lode.Add(poleLodi);
+                lode.Add(poleLodi);
+            }
         }
 
         private static int[,] OriznoutLod(int[,] lod)
@@ -393,7 +398,7 @@ namespace ConsoleApp2
         private static void PohybLodi(List<int[,]> lode, List<int[,]> lodeVPoli, int[,] pole, ref bool pohybLodi, List<int[]> souradniceLodiVPoli, ref int aktualniLod)
         {
             VykreslitLodNaPole(lodeVPoli, pole, souradniceLodiVPoli, ref aktualniLod);
-            Console.WriteLine("Muzete pohybovat lodi pomoci sipek, otoceni lodi pomoci R, nacist dalsi lod na pole pomoci N, vybirat mezi nactenymi lodmi pomoci TAB (pro ukonceni stisknete ENTER)...");
+            Console.WriteLine("Muzete pohybovat lodi pomoci sipek, otoceni lodi pomoci R, nacist dalsi lod na pole pomoci N, \nvybirat mezi nactenymi lodmi pomoci TAB (pro ukonceni stisknete ENTER)...");
             ConsoleKeyInfo zmacknutaKlavesa = Console.ReadKey();
             switch (zmacknutaKlavesa.Key)
             {
@@ -450,7 +455,8 @@ namespace ConsoleApp2
                 {
                     for (int j = 0; j < lod.GetLength(1); j++)
                     {
-                        pole[i + souradnice[lodeVPoli.IndexOf(lod)][0], j + souradnice[lodeVPoli.IndexOf(lod)][1]] = lod[i, j];
+                        if (lod[i, j] == 1)
+                            pole[i + souradnice[lodeVPoli.IndexOf(lod)][0], j + souradnice[lodeVPoli.IndexOf(lod)][1]] = lodeVPoli.IndexOf(lod) == aktualniLod ? 2 * lod[i, j] : lod[i, j];
                     }
                 }
             }
@@ -513,13 +519,9 @@ namespace ConsoleApp2
             y += (int)posunuti;
             //Console.WriteLine("posunute x: {0}; y: {1}", x, y);
             //Console.ReadKey();
-            if (x >= 0 && x + lod.GetLength(0) <= pole.GetLength(0))
-            {
-                if (y >= 0 && y + lod.GetLength(1) <= pole.GetLength(1))
-                {
+            if (x >= 0 && x + pokusnaLod.GetLength(0) <= pole.GetLength(0))
+                if (y >= 0 && y + pokusnaLod.GetLength(1) <= pole.GetLength(1))
                     return true;
-                }
-            }
 
             return false;
         }
