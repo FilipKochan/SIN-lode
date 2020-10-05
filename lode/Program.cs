@@ -8,16 +8,17 @@ namespace ConsoleApp2
         static void Main(string[] args)
         {
             int[,] pole;
+            int sirka, delka;
             List<int[,]> lode = new List<int[,]>();
             List<int[,]> lodeVPoli = new List<int[,]>();
             List<int[]> souradniceLodi = new List<int[]>();
 
             lode.Add(new int[,] { { 0, 1 }, { 0, 1 }, { 1, 1 } });
-
+            lode.Add(new int[,] { { 0, 1, 1 }, { 1, 1, 0 }, { 1, 0, 0 } });
 
             int aktualniIndex;
 
-            DeklaracePole(out int sirka, out int delka);
+            DeklaracePole(out sirka, out delka);
             pole = new int[sirka, delka];
             bool tvorbaLodi = true;
             bool pohybLodi = true;
@@ -29,7 +30,8 @@ namespace ConsoleApp2
                 Console.Clear();
             }
 
-            NacteniLodiNaPole(lode, lodeVPoli, souradniceLodi);
+            ResetPole(pole);
+            NacteniLodiNaPole(lode, lodeVPoli, souradniceLodi, pole);
             aktualniIndex = 0;
 
             while (pohybLodi)
@@ -41,13 +43,24 @@ namespace ConsoleApp2
             Console.ReadKey();
         }
 
-        private static void NacteniLodiNaPole(List<int[,]> lode, List<int[,]> lodeVPoli, List<int[]> souradnice)
+        private static void NacteniLodiNaPole(List<int[,]> lode, List<int[,]> lodeVPoli, List<int[]> souradnice, int[,] pole)
         {
             Console.Clear();
             Console.WriteLine("Zadejte index lodi, kterou chcete nacist:");
             int.TryParse(Console.ReadLine(), out int indexLodi);
-            lodeVPoli.Add(lode[indexLodi - 1]);
-            souradnice.Add(new int[] { 0, 0 });
+            int[] novesouradnice = ZiskatSouradniceLode(lode[indexLodi - 1], pole);
+            if (novesouradnice[0] == -1)
+            {
+                Console.WriteLine("Pro danou lod neni v poli dost mista. (zkuste lode premistit a misto uvolnit.)");
+                Console.WriteLine("Pokracujte stiskem libovolne klavesy . . .");
+            }
+            else
+            {
+                Console.WriteLine($"n1: {novesouradnice[0]}, n2: {novesouradnice[1]}");
+                lodeVPoli.Add(lode[indexLodi - 1]);
+                souradnice.Add(novesouradnice);
+                Console.ReadKey();
+            }
             Console.Clear();
         }
 
@@ -70,19 +83,24 @@ namespace ConsoleApp2
                 Console.Write(" |");
                 for (int j = 0; j < pole.GetLength(0); j++)
                 {
-                    if (pole[j, i] == 0)
-                        Console.Write("   |");
-                    else if (pole[j, i] == 1)
-                        Console.Write(" █ |");
-                    else if (pole[j, i] == 2)
-                    {
-                        Console.Write(" ");
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write("█");
-                        Console.ResetColor();
-                        Console.Write(" |");
-                    }
-
+                    /* if (pole[j, i] == 0)
+                     {
+                         Console.Write("   |");
+                     }
+                     else if (pole[j, i] == 1)
+                     {
+                         Console.Write(" █ |");
+                     }
+                     else if (pole[j, i] == 2)
+                     {
+                         Console.Write(" ");
+                         Console.ForegroundColor = ConsoleColor.Green;
+                         Console.Write("█");
+                         Console.ResetColor();
+                         Console.Write(" |");
+                     }
+                     */
+                    Console.Write(" {0} |", pole[j, i]);
                 }
                 Console.WriteLine();
             }
@@ -273,7 +291,7 @@ namespace ConsoleApp2
                 i--;
             }
 
-            //Console.WriteLine($"poc0: {pocatecniIndex0}, kon0: {koncovyIndex0}\npoc1: {pocatecniIndex1}, kon1: {koncovyIndex1}");
+            Console.WriteLine($"poc0: {pocatecniIndex0}, kon0: {koncovyIndex0}\npoc1: {pocatecniIndex1}, kon1: {koncovyIndex1}");
 
             //vytvoreni noveho arraye lodi
             int[,] poleLodi = new int[koncovyIndex0 - pocatecniIndex0 + 1, koncovyIndex1 - pocatecniIndex1 + 1];
@@ -319,7 +337,7 @@ namespace ConsoleApp2
                             souradniceLodi[aktualiIndex][1]++;
                         break;
                     case ConsoleKey.N:
-                        NacteniLodiNaPole(lode, lodeVPoli, souradniceLodi);
+                        NacteniLodiNaPole(lode, lodeVPoli, souradniceLodi, pole);
                         break;
                     case ConsoleKey.Tab:
                         aktualiIndex++;
@@ -347,9 +365,9 @@ namespace ConsoleApp2
         private static void VykreslitLodeNaPole(List<int[,]> lodeVPoli, List<int[]> souradniceLodi, int aktualniIndex, int[,] pole, bool vykrestlit = true)
         {
             ResetPole(pole);
-            int mult = 1;
             foreach (int[,] lod in lodeVPoli)
             {
+                int mult = lodeVPoli.IndexOf(lod) == aktualniIndex ? 2 : 1;
                 for (int i = 0; i < lod.GetLength(0); i++)
                 {
                     for (int j = 0; j < lod.GetLength(1); j++)
@@ -358,7 +376,6 @@ namespace ConsoleApp2
                             mult = 2;
                         if (lod[i, j] == 1)
                             pole[i + souradniceLodi[lodeVPoli.IndexOf(lod)][0], j + souradniceLodi[lodeVPoli.IndexOf(lod)][1]] = mult * lod[i, j];
-                        mult = 1;
                     }
                 }
             }
@@ -437,9 +454,9 @@ namespace ConsoleApp2
         {
             int puvodniSoucet = SoucetPole(pole);
             int novySoucet;
-            var novePole = new int[pole.GetLength(0), pole.GetLength(1)];
-            List<int[]> souradniceLodiKopie = KopieListu(souradniceLodi);
-            List<int[,]> lodeVPoliKopie = KopieListu(lodeVPoli);
+            int[,] novePole = new int[pole.GetLength(0), pole.GetLength(1)];
+            List<int[]> souradniceLodiKopie = KopiePole(souradniceLodi);
+            List<int[,]> lodeVPoliKopie = KopiePole(lodeVPoli);
 
             switch (zmacknutaKlavesa.Key)
             {
@@ -463,8 +480,6 @@ namespace ConsoleApp2
                     if (JdeRotace(pole, lodeVPoliKopie[aktualiIndex], souradniceLodiKopie[aktualiIndex][0], souradniceLodiKopie[aktualiIndex][1]))
                     {
                         lodeVPoliKopie[aktualiIndex] = RotaceLodi(lodeVPoliKopie[aktualiIndex]);
-                        //x += -posun * ((lod.GetLength(1) + lod.GetLength(0)) / 2 - 1); nesmysl
-                        //y += posun * ((lod.GetLength(1) + lod.GetLength(0)) / 2 - 1); nesmysl
                         double posunuti = (lodeVPoliKopie[aktualiIndex].GetLength(0) - lodeVPoliKopie[aktualiIndex].GetLength(1)) / 2;
                         posunuti = Math.Floor(posunuti);
                         souradniceLodiKopie[aktualiIndex][0] -= (int)posunuti;
@@ -497,37 +512,85 @@ namespace ConsoleApp2
             return soucet;
         }
 
-        private static List<int[,]> KopieListu(List<int[,]> list)
+        private static List<int[,]> KopiePole(List<int[,]> pole)
         {
-            var kopieListu = new List<int[,]>();
-            for (int k = 0; k < list.Count; k++)
+            List<int[,]> kopie = new List<int[,]>();
+
+            foreach (int[,] arr in pole)
             {
-                var kopiePole = new int[list[k].GetLength(0), list[k].GetLength(1)];
-                for (int i = 0; i < list[k].GetLength(0); i++)
+                int[,] kopiePole = new int[arr.GetLength(0), arr.GetLength(1)];
+                for (int i = 0; i < arr.GetLength(0); i++)
                 {
-                    for (int j = 0; j < list[k].GetLength(1); j++)
+                    for (int j = 0; j < arr.GetLength(1); j++)
                     {
-                        kopiePole[i, j] = list[k][i, j];
+                        kopiePole[i, j] = arr[i, j];
                     }
                 }
-                kopieListu.Add(kopiePole);
+                kopie.Add(kopiePole);
             }
-            return kopieListu;
+            return kopie;
         }
 
-        private static List<int[]> KopieListu(List<int[]> list)
+        private static List<int[]> KopiePole(List<int[]> pole)
         {
-            var kopieListu = new List<int[]>();
-            for (int k = 0; k < list.Count; k++)
+            List<int[]> kopie = new List<int[]>();
+
+            foreach (int[] arr in pole)
             {
-                var kopiePole = new int[list[k].Length];
-                for (int i = 0; i < list[k].Length; i++)
+                int[] kopiePole = new int[arr.Length];
+                for (int i = 0; i < arr.Length; i++)
                 {
-                    kopiePole[i] = list[k][i];
+                    kopiePole[i] = arr[i];
                 }
-                kopieListu.Add(kopiePole);
+                kopie.Add(kopiePole);
             }
-            return kopieListu;
+            return kopie;
+        }
+
+        private static int[] ZiskatSouradniceLode(int[,] lodKPridani, int[,] pole)
+        {
+            int delka = lodKPridani.GetLength(0);
+            int sirka = lodKPridani.GetLength(1);
+
+            int x = 0, y = 0;
+            bool hledaniSouradnic = true;
+
+            while (x + delka < pole.GetLength(0) && hledaniSouradnic)
+            {
+                while (y + sirka < pole.GetLength(1) && hledaniSouradnic)
+                {
+                    bool prazdnePole = true;
+                    for (int i = x; i < delka + x; i++)
+                    {
+                        for (int j = y; j < sirka + y; j++)
+                        {
+                            if (pole[i, j] != 0)
+                                prazdnePole = false;
+                        }
+                    }
+                    if (prazdnePole)
+                    {
+                        hledaniSouradnic = false;
+                        break;
+                    }
+                    else
+                        y++;
+                }
+                if (!hledaniSouradnic)
+                {
+                    break;
+                }
+                else
+                {
+                    x++;
+                    y = 0;
+                }
+            }
+
+            if (hledaniSouradnic)
+                return new int[] { -1, -1 };
+            else
+                return new int[] { x, y };
         }
     }
 }
