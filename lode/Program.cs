@@ -7,6 +7,11 @@ namespace ConsoleApp2
     {
         static void Main(string[] args)
         {
+            //program by snad uz nemel obsahovat zadne bugy, 
+            //na zacatku si hrac urci velikost pole, pote si vytvori kolik lodi chce
+            //potom si hrac na pole pridava libovolne lode a hybe s nimi
+
+            //---------------------------------------------------------------------
             int[,] pole;
             List<int[,]> lode = new List<int[,]>();
             List<int[,]> lodeVPoli = new List<int[,]>();
@@ -46,10 +51,10 @@ namespace ConsoleApp2
             Console.WriteLine("Zadejte index lodi, kterou chcete nacist:");
             VykresleniListuLodi(lode);
             int indexLodi;
-            while (!int.TryParse(Console.ReadLine(), out indexLodi) && (indexLodi < 1 || indexLodi > lode.Count))
+            while (!int.TryParse(Console.ReadLine(), out indexLodi) || indexLodi < 1 || indexLodi > lode.Count)
             {
                 Console.WriteLine("Zadan, nespravny index, zkuste to prosim znova.");
-            };
+            }
             //Console.WriteLine("lode.count: {0}", lode.Count);
             //Console.WriteLine("indexlodi: {0}", indexLodi);
             int[] novesouradnice = ZiskatSouradniceLode(lode[indexLodi - 1], pole);
@@ -60,6 +65,7 @@ namespace ConsoleApp2
                 Console.WriteLine("Pro danou lod neni v poli dost mista. (Zkuste lode premistit a misto uvolnit.)");
                 Console.WriteLine("Pokracujte stiskem libovolne klavesy . . .");
                 Console.ReadKey();
+                Console.Clear();
             }
             else
             {
@@ -87,7 +93,7 @@ namespace ConsoleApp2
             else
             {
                 string[] rozmery = vstup.Split(',');
-                while (!(rozmery.Length == 2 && int.TryParse(rozmery[0], out sirka) && int.TryParse(rozmery[1], out delka)))
+                while (!(rozmery.Length == 2 && int.TryParse(rozmery[0], out sirka) && int.TryParse(rozmery[1], out delka) && sirka > 0 && delka > 0))
                 {
                     Console.WriteLine("Zadani bylo chybne, zkuste to znova:");
                     rozmery = Console.ReadLine().Split(',');
@@ -179,48 +185,48 @@ namespace ConsoleApp2
                                 else
                                 {
                                     Console.WriteLine("Tato cast nelze pro lod zvolit. Zkuste zadat jinou pozici:");
-                                    input = Console.ReadLine();
-                                    if (input == "ok")
-                                    {
-                                        lode.Add(VytahnoutLodZPole(pole));
-                                        tvorbaLodi = false;
-                                        Console.WriteLine("Lod byla ulozena pod indexem {0}.", lode.Count);
-                                        Console.WriteLine("Pokracujte stiskem libovolne klavesy");
-                                        Console.ReadKey();
-                                    }
+                                    input = ZnovaZadaniPozice(pole, lode, ref tvorbaLodi, ref spravneZadani);
                                 }
 
                             }
                             else
                             {
                                 Console.WriteLine("Zadana pozice je jiz obsazena, zkuste prosim jinou.");
-                                input = Console.ReadLine();
-                                if (input == "ok")
-                                {
-                                    lode.Add(VytahnoutLodZPole(pole));
-                                    tvorbaLodi = false;
-                                    Console.WriteLine("Lod byla ulozena pod indexem {0}.", lode.Count);
-                                    Console.WriteLine("Pokracujte stiskem libovolne klavesy");
-                                    Console.ReadKey();
-                                }
+                                input = ZnovaZadaniPozice(pole, lode, ref tvorbaLodi, ref spravneZadani);
                             }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Zadani bylo chybne, zkuste to prosim znova:");
+                            input = ZnovaZadaniPozice(pole, lode, ref tvorbaLodi, ref spravneZadani);
                         }
                     }
                     else
                     {
                         Console.WriteLine("Zadani bylo chybne, zkuste to prosim znova:");
-                        input = Console.ReadLine();
-                        if (input == "ok")
-                        {
-                            lode.Add(VytahnoutLodZPole(pole));
-                            tvorbaLodi = false;
-                            Console.WriteLine("Lod byla ulozena pod indexem {0}.", lode.Count);
-                            Console.WriteLine("Pokracujte stiskem libovolne klavesy");
-                            Console.ReadKey();
-                        }
+                        input = ZnovaZadaniPozice(pole, lode, ref tvorbaLodi, ref spravneZadani);
                     }
                 }
             }
+        }
+
+        private static string ZnovaZadaniPozice(int[,] pole, List<int[,]> lode, ref bool tvorbaLodi, ref bool spravneZadani)
+        {
+            string input = Console.ReadLine();
+            if (input == "ok")
+            {
+                if (JePolePrazdne(pole))
+                {
+                    lode.Add(VytahnoutLodZPole(pole));
+                    Console.WriteLine("Lod byla ulozena pod indexem {0}.", lode.Count);
+                }
+                tvorbaLodi = false;
+                spravneZadani = true;
+                Console.WriteLine("Pokracujte stiskem libovolne klavesy . . .");
+                Console.ReadKey();
+            }
+
+            return input;
         }
 
         private static void UlozitLod(int[,] pole, List<int[,]> lode)
@@ -410,37 +416,39 @@ namespace ConsoleApp2
             posunuti = Math.Floor(posunuti);
             souradniceLodi[aktualiIndex][0] -= (int)posunuti;
             souradniceLodi[aktualiIndex][1] += (int)posunuti;
-            // orizne lod od casti pridanych pro rotaci a upravi souradnice tak aby se lod po oriznuti neposunula
             int[] noveSoradnice = NoveSouradnicePoOriznuti(lodeVPoli[aktualiIndex]);
             lodeVPoli[aktualiIndex] = VytahnoutLodZPole(lodeVPoli[aktualiIndex]);
             souradniceLodi[aktualiIndex][0] += noveSoradnice[0];
             souradniceLodi[aktualiIndex][1] += noveSoradnice[1];
         }
+
         private static int[] NoveSouradnicePoOriznuti(int[,] lod)
         {
-            bool jePrvniRadekPrazdny = true, jePrvniSloupecPrazdny = true;
-            for (int i = 0; i < lod.GetLength(0); i++)
-            {
-                if (lod[i, 0] == 1)
-                {
-                    jePrvniSloupecPrazdny = false;
-                    break;
-                }
-            }
-            for (int i = 0; i < lod.GetLength(1); i++)
-            {
-                if (lod[0, i] == 1)
-                {
-                    jePrvniRadekPrazdny = false;
-                    break;
-                }
-            }
+            //chtel jsem jeste vylepsit otaceni ale nejak to nefungovalo...
+            //------------------------------------------------------------
+            //bool jePrvniRadekPrazdny = true, jePrvniSloupecPrazdny = true;
+            //for (int i = 0; i < lod.GetLength(0); i++)
+            //{
+            //    if (lod[i, 0] == 1)
+            //    {
+            //        jePrvniSloupecPrazdny = false;
+            //        break;
+            //    }
+            //}
+            //for (int i = 0; i < lod.GetLength(1); i++)
+            //{
+            //    if (lod[0, i] == 1)
+            //    {
+            //        jePrvniRadekPrazdny = false;
+            //        break;
+            //    }
+            //}
 
-            if (jePrvniSloupecPrazdny)
-                return new int[] { 0, 1 };
-            else if (jePrvniRadekPrazdny)
-                return new int[] { 1, 0 };
-            else
+            //if (jePrvniSloupecPrazdny)
+            //    return new int[] { 0, 1 };
+            //else if (jePrvniRadekPrazdny)
+            //    return new int[] { 1, 0 };
+            //else
                 return new int[] { 0, 0 };
         }
 
@@ -555,40 +563,50 @@ namespace ConsoleApp2
             List<int[]> souradniceLodiKopie = KopiePole(souradniceLodi);
             List<int[,]> lodeVPoliKopie = KopiePole(lodeVPoli);
 
-            switch (zmacknutaKlavesa.Key)
+            if (lodeVPoli.Count > 0)
             {
-                case ConsoleKey.LeftArrow:
-                    if (souradniceLodiKopie[aktualiIndex][0] > 0)
-                        souradniceLodiKopie[aktualiIndex][0]--;
-                    break;
-                case ConsoleKey.RightArrow:
-                    if (souradniceLodiKopie[aktualiIndex][0] + lodeVPoliKopie[aktualiIndex].GetLength(0) < pole.GetLength(0))
-                        souradniceLodiKopie[aktualiIndex][0]++;
-                    break;
-                case ConsoleKey.UpArrow:
-                    if (souradniceLodiKopie[aktualiIndex][1] > 0)
-                        souradniceLodiKopie[aktualiIndex][1]--;
-                    break;
-                case ConsoleKey.DownArrow:
-                    if (souradniceLodiKopie[aktualiIndex][1] + lodeVPoliKopie[aktualiIndex].GetLength(1) < pole.GetLength(1))
-                        souradniceLodiKopie[aktualiIndex][1]++;
-                    break;
-                case ConsoleKey.R:
-                    if (JdeRotace(pole, lodeVPoliKopie[aktualiIndex], souradniceLodiKopie[aktualiIndex][0], souradniceLodiKopie[aktualiIndex][1]))
-                    {
-                        UdelatRotaci(lodeVPoliKopie, aktualiIndex, souradniceLodiKopie);
-                    }
-                    break;
-                default:
-                    break;
-            }
+                switch (zmacknutaKlavesa.Key)
+                {
+                    case ConsoleKey.LeftArrow:
+                        if (souradniceLodiKopie[aktualiIndex][0] > 0)
+                            souradniceLodiKopie[aktualiIndex][0]--;
+                        break;
+                    case ConsoleKey.RightArrow:
+                        if (souradniceLodiKopie[aktualiIndex][0] + lodeVPoliKopie[aktualiIndex].GetLength(0) < pole.GetLength(0))
+                            souradniceLodiKopie[aktualiIndex][0]++;
+                        break;
+                    case ConsoleKey.UpArrow:
+                        if (souradniceLodiKopie[aktualiIndex][1] > 0)
+                            souradniceLodiKopie[aktualiIndex][1]--;
+                        break;
+                    case ConsoleKey.DownArrow:
+                        if (souradniceLodiKopie[aktualiIndex][1] + lodeVPoliKopie[aktualiIndex].GetLength(1) < pole.GetLength(1))
+                            souradniceLodiKopie[aktualiIndex][1]++;
+                        break;
+                    case ConsoleKey.R:
+                        if (JdeRotace(pole, lodeVPoliKopie[aktualiIndex], souradniceLodiKopie[aktualiIndex][0], souradniceLodiKopie[aktualiIndex][1]))
+                        {
+                            UdelatRotaci(lodeVPoliKopie, aktualiIndex, souradniceLodiKopie);
+                        }
+                        break;
+                    default:
+                        break;
+                }
 
-            VykreslitLodeNaPole(lodeVPoliKopie, souradniceLodiKopie, aktualiIndex, novePole, false);
-            novySoucet = SoucetPole(novePole);
-            if (puvodniSoucet == novySoucet)
-                return true;
+                VykreslitLodeNaPole(lodeVPoliKopie, souradniceLodiKopie, aktualiIndex, novePole, false);
+                novySoucet = SoucetPole(novePole);
+                if (puvodniSoucet == novySoucet)
+                    return true;
+                else
+                    return false;
+            }
             else
-                return false;
+            {
+                if (zmacknutaKlavesa.Key == ConsoleKey.N || zmacknutaKlavesa.Key == ConsoleKey.Enter)
+                    return true;
+                else
+                    return false;
+            }
         }
 
         private static int SoucetPole(int[,] pole)
@@ -656,7 +674,7 @@ namespace ConsoleApp2
 
         private static int[] ZiskatSouradniceLode(int[,] lodKPridani, int[,] pole)
         {
-            VykresleniPole(pole);
+            //VykresleniPole(pole);
             int sirkaLode = lodKPridani.GetLength(0);
             int delkaLode = lodKPridani.GetLength(1);
 
@@ -703,12 +721,10 @@ namespace ConsoleApp2
 
             if (hledaniSouradnic)
             {
-                Console.WriteLine("NENALEZENY ZADNE SOURADNICE");
                 return new int[] { -1, -1 };
             }
             else
             {
-                Console.WriteLine("Nalezeny souradnice {0} a {1}.", x, y);
                 return new int[] { x, y };
             }
         }
